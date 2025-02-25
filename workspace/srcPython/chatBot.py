@@ -1,6 +1,6 @@
-python .\llm-qwen2.5-1B.py --host 192.168.20.24
-Setup LLM...
-Setup LLM finished.
+#python .\llm-qwen2.5-1B.py --host 192.168.20.24
+#Setup LLM...
+#Setup LLM finished.
 import socket
 import json
 import argparse
