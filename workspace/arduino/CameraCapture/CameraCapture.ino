@@ -16,3 +16,4 @@ void loop() {
   M5.Lcd.print("Imagen capturada");
   delay(2000); // Espera 2 segundos antes de capturar otra imagen
 }
+
