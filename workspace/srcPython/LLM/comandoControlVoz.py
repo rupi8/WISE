@@ -13,43 +13,43 @@
 
 import speech_recognition as sr
 import pyttsx3
+from datetime import datetime
 
-def escuchar_comando():
-    # Inicializar el reconocedor de voz
+def listen_command():
+    # Initialize the recognizer
     recognizer = sr.Recognizer()
     
-    # Usar el micrófono para escuchar
+    # Use the microphone to listen
     with sr.Microphone() as source:
-        print("Por favor, di un comando...")
-        recognizer.adjust_for_ambient_noise(source)  # Ajustar por ruido ambiente
-        audio = recognizer.listen(source)  # Escuchar el comando
+        print("Please say a command...")
+        recognizer.adjust_for_ambient_noise(source)  # Adjust for ambient noise
+        audio = recognizer.listen(source)  # Listen to the command
     
     try:
-        # Convertir el audio en texto
-        comando = recognizer.recognize_google(audio, language='es-ES')
-        print("Comando recibido: " + comando)
+        # Convert audio to text
+        command = recognizer.recognize_google(audio, language='en-US')
+        print("Received command: " + command)
         
-        # Responder según el comando
-        if 'hola' in comando.lower():
-            respuesta = "Hola, ¿cómo puedo ayudarte?"
-        elif 'hora' in comando.lower():
-            from datetime import datetime
-            hora_actual = datetime.now().strftime("%H:%M")
-            respuesta = f"La hora actual es {hora_actual}"
-        elif 'adiós' in comando.lower():
-            respuesta = "Adiós, ¡hasta luego!"
+        # Respond based on the command
+        if 'hello' in command.lower():
+            response = "Hello, how can I assist you?"
+        elif 'time' in command.lower():
+            current_time = datetime.now().strftime("%H:%M")
+            response = f"The current time is {current_time}."
+        elif 'goodbye' in command.lower():
+            response = "Goodbye, see you later!"
         else:
-            respuesta = "No entendí el comando."
+            response = "I did not understand the command."
 
-        # Convertir la respuesta en voz
+        # Convert the response to speech
         engine = pyttsx3.init()
-        engine.say(respuesta)
-        engine.runAndWait()  # Reproducir la respuesta
+        engine.say(response)
+        engine.runAndWait()  # Play the response
         
     except sr.UnknownValueError:
-        print("No pude entender lo que dijiste.")
+        print("I could not understand what you said.")
     except sr.RequestError as e:
-        print(f"Error de solicitud: {e}")
+        print(f"Request error: {e}")
 
-# Llamar a la función para escuchar el comando
-escuchar_comando()
+# Call the function to listen to the command
+listen_command()

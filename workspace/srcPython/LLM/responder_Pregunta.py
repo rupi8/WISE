@@ -2,18 +2,17 @@
 # para responder preguntas o dar indicaciones en voz alta. Por ejemplo, si el 
 # sistema entiende una pregunta del usuario, podría responderla verbalmente.
 
-
 import pyttsx3
 
-def responder_pregunta(pregunta):
-    respuestas = {
-        "¿cómo estás?": "Estoy bien, gracias por preguntar.",
-        "¿qué hora es?": "Son las tres de la tarde."
+def answer_question(question):
+    responses = {
+        "how are you?": "I'm fine, thank you for asking.",
+        "what time is it?": "It's three in the afternoon."
     }
-    respuesta = respuestas.get(pregunta.lower(), "No estoy seguro de la respuesta.")
+    response = responses.get(question.lower(), "I'm not sure about the answer.")
     engine = pyttsx3.init()
-    engine.say(respuesta)
+    engine.say(response)
     engine.runAndWait()
 
-# Probar la función con una pregunta
-responder_pregunta("¿cómo estás?")
+# Test the function with a question
+answer_question("how are you?")
