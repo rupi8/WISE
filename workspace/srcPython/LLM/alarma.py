@@ -2,13 +2,12 @@
 # evento o para confirmar una acción realizada. Esto puede ser útil en interfaces 
 # de usuario o sistemas automatizados.
 
-
 import pyttsx3
 
-def alerta(texto):
+def alert(text):
     engine = pyttsx3.init()
-    engine.say(texto)
+    engine.say(text)
     engine.runAndWait()
 
-# Llamar a la función para dar una alerta
-alerta("¡Alerta! Se ha detectado movimiento.")
+# Call the function to give an alert
+alert("Alert! Movement detected.")
