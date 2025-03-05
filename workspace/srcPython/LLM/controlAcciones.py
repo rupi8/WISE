@@ -22,7 +22,7 @@ def control_actions():
         text = recognizer.recognize_google(audio, language='en-US')
         print(f"Received command: {text}")
 
-        if 'turn on the light' in text.lower():
+        if 'turn on the light' in text.lower(): #fuuck
             print("Light turned on!")
         elif 'turn off the light' in text.lower():
             print("Light turned off!")
