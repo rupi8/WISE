@@ -7,8 +7,9 @@ def main_voice_control():
     print("2. Voice feedback")
     print("3. Listen and display")
     print("4. Answer a question")
+    print("5. Test microphone")
     
-    choice = input("Enter your choice (1-4): ")
+    choice = input("Enter your choice (1-5): ")
     
     if choice == "1":
         control_actions()
@@ -19,6 +20,8 @@ def main_voice_control():
     elif choice == "4":
         question = input("Enter your question: ")
         answer_question(question)
+    elif choice == "5":
+        test_microphone()
     else:
         print("Invalid choice.")
 
@@ -99,6 +102,29 @@ def answer_question(question):
     engine = pyttsx3.init()
     engine.say(response)
     engine.runAndWait()
+
+def test_microphone():
+    recognizer = sr.Recognizer()
+    engine = pyttsx3.init()
+    
+    with sr.Microphone() as source:
+        print("Testing microphone. Please speak...")
+        recognizer.adjust_for_ambient_noise(source)
+        audio = recognizer.listen(source)
+
+    try:
+        text = recognizer.recognize_google(audio, language='en-US')
+        print(f"You said: {text}")
+        engine.say(f"You said: {text}")
+        engine.runAndWait()
+    except sr.UnknownValueError:
+        print("Could not understand the audio.")
+        engine.say("Could not understand the audio.")
+        engine.runAndWait()
+    except sr.RequestError as e:
+        print(f"Error with the recognition service: {e}")
+        engine.say("Error with the recognition service.")
+        engine.runAndWait()
 
 if __name__ == "__main__":
     main_voice_control()
