@@ -1,0 +1,18 @@
+{
+    "mode": "None",
+    "type": "camera",
+    "capabilities": [
+        "play",
+        "cap"
+    ],
+    "input_type": [
+        "rpc.camera.wav.base64",
+        "rpc.camera.pcm.base64"
+    ],
+    "output_type": [
+        "camera.pcm.stream"
+    ],
+    "cap_param": {
+        "None": "None"
+    }
+}

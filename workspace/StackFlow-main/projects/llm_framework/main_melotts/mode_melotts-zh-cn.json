@@ -1,0 +1,25 @@
+{
+    "mode": "melotts_zh-cn",
+    "type": "tts",
+    "capabilities": [
+        "tts"
+    ],
+    "input_type": [
+        "tts.utf-8"
+    ],
+    "output_type": [
+        "tts.wav",
+        "sys.play.0_1"
+    ],
+    "mode_param": {
+        "encoder": "encoder.ort",
+        "decoder": "decoder.axmodel",
+        "gbin": "g.bin",
+        "tokens": "tokens.txt",
+        "lexicon": "lexicon.txt",
+        "spacker_speed": 1.0,
+        "mode_rate": 44100,
+        "audio_rate": 16000,
+        "awake_delay": 1000
+    }
+}

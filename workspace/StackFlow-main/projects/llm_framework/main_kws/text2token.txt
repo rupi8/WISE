@@ -1,0 +1,3 @@
+python3 /opt/m5stack/scripts/text2token.py --text /tmp/kws_awake.txt.tmp --tokens /opt/m5stack/data/sherpa-onnx-kws-zipformer-gigaspeech-3.3M-2024-01-01/tokens.txt --tokens-type cjkchar+bpe --bpe-model /opt/m5stack/data/sherpa-onnx-kws-zipformer-gigaspeech-3.3M-2024-01-01/bpe.model --output /opt/m5stack/data/sherpa-onnx-kws-zipformer-gigaspeech-3.3M-2024-01-01/keywords.txt
+
+python3 /opt/m5stack/scripts/text2token.py --text /tmp/kws_awake.txt.tmp --tokens /opt/m5stack/data/sherpa-onnx-kws-zipformer-wenetspeech-3.3M-2024-01-01/tokens.txt --tokens-type ppinyin --output /opt/m5stack/data/sherpa-onnx-kws-zipformer-wenetspeech-3.3M-2024-01-01/keywords.txt
