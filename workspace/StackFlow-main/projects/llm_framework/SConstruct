@@ -1,0 +1,31 @@
+from pathlib import Path
+import os
+import shutil
+
+os.environ['SDK_PATH'] = os.path.normpath(str(Path(os.getcwd())/'..'/'..'/'SDK'))
+os.environ['EXT_COMPONENTS_PATH'] = os.path.normpath(str(Path(os.getcwd())/'..'/'..'/'ext_components'))
+
+version = 'v0.0.7'
+static_lib = 'static_lib'
+update = False
+
+with open(str(Path(os.getcwd())/'..'/'..'/'SDK'/'tools'/'scons'/'project.py')) as f:
+    exec(f.read())
+
+if not os.path.exists(static_lib):
+    update = True
+else:
+    try:
+        with open(str(Path(static_lib)/'version'), 'r') as f:
+            if f.read() != version:
+                update = True
+    except:
+        update = True
+if update:
+    with open(env['PROJECT_TOOL_S']) as f:
+        exec(f.read())
+    down_url = "https://m5stack.oss-cn-shenzhen.aliyuncs.com/resource/linux/llm/static_lib_{}.tar.gz".format(version)
+    down_path = check_wget_down(down_url, "static_lib_{}.tar.gz".format(version))
+    if os.path.exists(static_lib):
+        shutil.rmtree(static_lib)
+    shutil.move(down_path, static_lib)

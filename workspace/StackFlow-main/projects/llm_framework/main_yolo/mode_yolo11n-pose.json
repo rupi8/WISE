@@ -1,0 +1,28 @@
+{
+    "mode":"yolo11n-pose",
+    "type":"cv",
+    "capabilities":[
+        "Pose"
+    ],
+    "input_type":[
+        "yolo.jpeg.base64"
+    ],
+    "output_type":[
+        "yolo.yolobox"
+    ],
+    "mode_param":{
+        "yolo_model":"yolo11n-pose.axmodel",
+        "model_type":"pose",
+        "img_h":320,
+        "img_w":320,
+        "cls_num":1,
+        "point_num":17,
+        "pron_threshold":0.45,
+        "nms_threshold":0.45,
+        "cls_name":[
+            "person"
+        ]
+    },
+    "mode_param_bak":{
+    }
+}

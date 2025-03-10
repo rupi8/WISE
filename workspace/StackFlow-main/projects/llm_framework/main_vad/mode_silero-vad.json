@@ -1,0 +1,26 @@
+{
+  "mode": "silero_vad",
+  "type": "vad",
+  "capabilities": [
+    "Voice_activity_detection"
+  ],
+  "input_type": [
+    "sys.pcm",
+    "sys.cap.0_0"
+  ],
+  "output_type": [
+    "vad.bool"
+  ],
+  "mode_param": {
+    "silero_vad.model": "silero_vad.ort"
+  },
+  "mode_param_bak": {
+    "silero_vad.threshold": 0.5,
+    "silero_vad.min_silence_duration": 0.5,
+    "silero_vad.min_speech_duration": 0.25,
+    "silero_vad.window_size": 512,
+    "sample_rate": 16000,
+    "num_threads": 1,
+    "provider": "cpu"
+  }
+}

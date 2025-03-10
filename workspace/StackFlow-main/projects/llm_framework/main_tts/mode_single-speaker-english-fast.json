@@ -1,0 +1,19 @@
+{
+    "mode": "single_speaker_english_fast",
+    "type": "tts",
+    "capabilities": [
+        "tts",
+        "English"
+    ],
+    "input_type": [
+        "tts.utf-8"
+    ],
+    "output_type": [
+        "tts.wav",
+        "sys.play.0_1"
+    ],
+    "mode_param": {
+        "ttsModelName": "single_speaker_english_fast.bin",
+        "awake_delay": 1000
+    }
+}

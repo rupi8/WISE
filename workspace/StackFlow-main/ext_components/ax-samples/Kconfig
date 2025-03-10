@@ -1,0 +1,6 @@
+menuconfig AX_SAMPLES_ENABLED
+    bool "Enable ax-samples support"
+    default n
+    depends on AX_MSP_ENABLED
+    help
+        enable axera ax-samples support

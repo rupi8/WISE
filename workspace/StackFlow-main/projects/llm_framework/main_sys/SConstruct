@@ -1,0 +1,49 @@
+# project_root/src/SConscript
+import os
+# Import the environment from the SConstruct file
+Import('env')
+with open(env['PROJECT_TOOL_S']) as f:
+    exec(f.read())
+
+SRCS = Glob('src/*.c*')
+INCLUDE = [ADir('include'), ADir('.')]
+PRIVATE_INCLUDE = []
+REQUIREMENTS = ['hv', 'pthread', 'utilities', 'DeviceDriver', 'util', 'StackFlow', 'simdjson_component']
+STATIC_LIB = []
+DYNAMIC_LIB = []
+DEFINITIONS = []
+DEFINITIONS_PRIVATE = []
+LDFLAGS = []
+LINK_SEARCH_PATH = []
+STATIC_FILES = []
+
+# DEFINITIONS += ['-std=c++17']
+
+# REQUIREMENTS += ['Backward_cpp']
+# DYNAMIC_LIB += [ AFile('../static_lib/libdw.so.1'),
+#                 AFile('../static_lib/libelf.so.1'),
+#                 AFile('../static_lib/libz.so.1'),
+#                 AFile('../static_lib/liblzma.so.5'),
+#                 AFile('../static_lib/libbz2.so.1.0')]
+# DEFINITIONS += ["-DENABLE_BACKWARD"]
+
+LINK_SEARCH_PATH += [ADir('../static_lib')]
+
+LDFLAGS+=['-Wl,-rpath=/opt/m5stack/lib', '-Wl,-rpath=/usr/local/m5stack/lib', '-Wl,-rpath=/usr/local/m5stack/lib/gcc-10.3', '-Wl,-rpath=/opt/lib', '-Wl,-rpath=/opt/usr/lib', '-Wl,-rpath=./']
+
+STATIC_FILES += [AFile('sys_config.json')]
+REQUIREMENTS += ['simdjson_component']
+env['COMPONENTS'].append({'target':'llm_sys',
+                          'SRCS':SRCS,
+                          'INCLUDE':INCLUDE,
+                          'PRIVATE_INCLUDE':PRIVATE_INCLUDE,
+                          'REQUIREMENTS':REQUIREMENTS,
+                          'STATIC_LIB':STATIC_LIB,
+                          'DYNAMIC_LIB':DYNAMIC_LIB,
+                          'DEFINITIONS':DEFINITIONS,
+                          'DEFINITIONS_PRIVATE':DEFINITIONS_PRIVATE,
+                          'LDFLAGS':LDFLAGS,
+                          'LINK_SEARCH_PATH':LINK_SEARCH_PATH,
+                          'STATIC_FILES':STATIC_FILES,
+                          'REGISTER':'project'
+                          })
