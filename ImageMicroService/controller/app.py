@@ -8,17 +8,17 @@ from controller.routes.image_routes import ns as image_ns  # Importa el namespac
 
 app = Flask(__name__)
 
-# Configura la API con documentación profesional
+#API documentación
 api = Api(
     app,
     version='1.0.0',
-    title='Image Microservice API',
+    title='Microservice API WISE',
     description=(
         'API para controlar y procesar imágenes mediante comandos y gestos. '
         'Soporta ajustes de brillo, cambio de imágenes y comunicación con paneles LCD. '
         'Diseñada para integrarse con dispositivos como M5Stack y Raspberry Pi.'
     ),
-    contact='tu.email@dominio.com',
+    contact='upcCia.email@estudiantat.com',
     contact_url='https://tu-sitio-web.com',
     license='MIT',
     license_url='https://opensource.org/licenses/MIT',
