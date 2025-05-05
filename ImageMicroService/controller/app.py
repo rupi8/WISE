@@ -4,7 +4,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from flask import Flask
 from flask_restx import Api
-from repository.database import db  # Importar db desde database.py
+from extensions import db  # Importar db desde extensions.py
 from controller.routes.image_routes import ns as image_ns  # Importa el namespace de rutas
 
 # Crear la instancia de la aplicación Flask
@@ -27,18 +27,9 @@ with app.app_context():
 # Configurar la API con Flask-RESTX
 api = Api(
     app,
-    version='1.0.0',
-    title='Microservice API WISE',
-    description=(
-        'API to control and process images through commands and gestures. '
-        'Supports brightness adjustments, image changes, and communication with LCD panels. '
-        'Designed to integrate with devices like M5Stack and Raspberry Pi.'
-    ),
-    contact='upcCia.email@estudiantat.com',
-    contact_url='https://tu-sitio-web.com',
-    license='MIT',
-    license_url='https://opensource.org/licenses/MIT',
-    doc='/swagger/'  # Ruta para la interfaz Swagger
+    version='1.0',
+    title='Image Microservice API',
+    description='API for managing images and brightness'
 )
 
 # Registra el namespace de imágenes

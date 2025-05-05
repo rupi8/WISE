@@ -1,7 +1,9 @@
-from repository.database import db
 from models.models import User, Image
+from extensions import db
+from scripts_tcp.Server_Code1 import main
 
 class ImageService:
+    image = "2"  # Imagen actual (objeto Image)
     def __init__(self):
         self.current_image = None  # Imagen actual (objeto Image)
 
@@ -17,44 +19,40 @@ class ImageService:
         db.session.commit()
         return "User created successfully"
 
-    def save_image(self, user_id, image_name):
-        """Saves a new image for a user in the database."""
-        user = User.query.get(user_id)
-        if not user:
-            return "User not found"
-        
-        new_image = Image(user_id=user_id, image_name=image_name, brightness_level=1.0)
+    def save_image(self, image_path, user_id, image_name, brightness_level=1.0):
+        """Saves an image to the database."""
+        with open(image_path, 'rb') as file:
+            image_binary = file.read()
+
+        new_image = Image(
+            user_id=user_id,
+            image_name=image_name,
+            brightness_level=brightness_level,
+            image_data=image_binary
+        )
         db.session.add(new_image)
         db.session.commit()
-        self.current_image = new_image
-        return f"Image {image_name} saved for user {user_id}"
+        return f"Image '{image_name}' saved successfully"
 
-    def adjust_brightness(self, command):
-        """Adjusts the brightness of the current image and updates the database."""
-        if not self.current_image:
-            return "No image selected"
+    def adjust_brightness(self, image_id, adjustment):
+        """Adjusts the brightness of an image."""
+        """image = Image.query.get(image_id)"""
+        if ImageService.image == None:
+            return "Image not found"
 
-        if command.lower() == "increase brightness":
-            self.current_image.brightness_level += 0.1
-            db.session.commit()
-            return "Brightness increased successfully"
-        elif command.lower() == "decrease brightness":
-            self.current_image.brightness_level -= 0.1
-            if self.current_image.brightness_level < 0:
-                self.current_image.brightness_level = 0
-            db.session.commit()
-            return "Brightness decreased successfully"
-        else:
-            return "Unrecognized command"
+        if adjustment == "increase":
+            main(inputString = "INCREASE")
+        elif adjustment == "decrease":
+            main(inputString = "DECREASE")
+
+        db.session.commit()
+        return f"Brightness adjusted to {ImageService.image}"
 
     def change_image(self, image_name):
-        """Changes the current image by selecting an existing image from the database."""
-        if not image_name:
-            return "Invalid image name"
-        
-        image = Image.query.filter_by(image_name=image_name).first()
-        if not image:
+        """Changes the current image."""
+        image = ImageService.image
+        if image == None:
             return "Image not found"
-        
-        self.current_image = image
+        main(inputString=f'LOAD {ImageService.image}')
+        main(inputString=f"SEND {image_name}")
         return f"Image changed to {image_name}"

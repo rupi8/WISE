@@ -1,5 +1,6 @@
 from flask_restx import Namespace, Resource, fields
 from service.image_service import ImageService
+from models.models import User, Image  # Import the User and Image models
 
 # Namespace for image-related operations
 ns = Namespace(
@@ -59,6 +60,29 @@ save_image_model = ns.model('SaveImage', {
         required=True,
         description='Name of the image file',
         example='my_image.jpg'
+    ),
+    'image_path': fields.String(
+        required=True,
+        description='Path to the image file',
+        example='/path/to/image.png'
+    ),
+    'brightness_level': fields.Float(
+        description='Initial brightness level',
+        example=1.0
+    )
+})
+
+adjust_brightness_model = ns.model('AdjustBrightness', {
+    'image_id': fields.Integer(
+        required=True,
+        description='ID of the image',
+        example=1
+    ),
+    'adjustment': fields.String(
+        required=True,
+        description='Adjustment type',
+        example='increase',
+        enum=['increase', 'decrease']
     )
 })
 
@@ -112,29 +136,55 @@ class UserResource(Resource):
             return ns.marshal({"error": result}, error_model), 400
         return ns.marshal({"result": result}, response_model), 201
 
+    @ns.doc(
+        'get_users',
+        description='Retrieves all users from the database.',
+        responses={
+            200: 'List of users retrieved successfully',
+            500: 'Error retrieving users'
+        }
+    )
+    def get(self):
+        """Retrieves all users from the database"""
+        try:
+            users = User.query.all()
+            users_list = [
+                {
+                    "id": user.id,
+                    "username": user.username,
+                    "email": user.email
+                }
+                for user in users
+            ]
+            return {"users": users_list}, 200
+        except Exception as e:
+            return {"error": str(e)}, 500
+
 @ns.route('/save-image')
 class SaveImageResource(Resource):
     @ns.doc(
         'save_image',
-        description='Saves a new image for a user in the database.',
+        description='Saves an image to the database.',
         responses={
             201: 'Image saved successfully',
-            400: 'Error: Invalid data or user not found'
+            400: 'Error saving image'
         }
     )
     @ns.expect(save_image_model, validate=True)
     def post(self):
-        """Saves a new image for a user"""
+        """Saves an image to the database"""
         data = ns.payload
-        if not data or "user_id" not in data or "image_name" not in data:
-            return ns.marshal({"error": "Invalid image data"}, error_model), 400
-        
-        user_id = data["user_id"]
-        image_name = data["image_name"]
-        result = image_service.save_image(user_id, image_name)
-        if "error" in result.lower():
-            return ns.marshal({"error": result}, error_model), 400
-        return ns.marshal({"result": result}, response_model), 201
+        return image_service.save_image(
+            data['image_path'], data['user_id'], data['image_name'], data.get('brightness_level', 1.0)
+        )
+
+@ns.route('/adjust-brightness')
+class AdjustBrightnessResource(Resource):
+    @ns.expect(adjust_brightness_model, validate=True)
+    def post(self):
+        """Adjusts the brightness of an image."""
+        data = ns.payload
+        return image_service.adjust_brightness(data['image_id'], data['adjustment'])
 
 @ns.route('/command')
 class CommandResource(Resource):
@@ -162,32 +212,6 @@ class CommandResource(Resource):
             return ns.marshal({"error": result}, error_model), 400
         return ns.marshal({"result": result}, response_model), 200
 
-@ns.route('/command/<string:command>')
-class CommandByPathResource(Resource):
-    @ns.doc(
-        'handle_command_by_path',
-        description=(
-            'Processes a command passed as a parameter in the URL. '
-            'Useful for quick tests or simple integrations.'
-        ),
-        params={
-            'command': 'Command to execute (e.g., "increase brightness")'
-        },
-        responses={
-            200: 'Command processed successfully',
-            400: 'Error: Invalid command'
-        }
-    )
-    def get(self, command):
-        """Processes a command passed in the URL"""
-        if not command:
-            return ns.marshal({"error": "Invalid command"}, error_model), 400
-        
-        result = image_service.adjust_brightness(command)
-        if "error" in result.lower():
-            return ns.marshal({"error": result}, error_model), 400
-        return ns.marshal({"result": result}, response_model), 200
-
 @ns.route('/change-image')
 class ChangeImageResource(Resource):
     @ns.doc(
@@ -202,11 +226,33 @@ class ChangeImageResource(Resource):
     def post(self):
         """Changes the current image"""
         data = ns.payload
-        if not data or "image_name" not in data:
-            return ns.marshal({"error": "Invalid image name"}, error_model), 400
-        
-        image_name = data["image_name"]
-        result = image_service.change_image(image_name)
-        if "error" in result.lower():
-            return ns.marshal({"error": result}, error_model), 400
+        result = image_service.change_image(data['image_name'])
         return ns.marshal({"result": result}, response_model), 200
+
+
+@ns.route('/images')
+class ImagesResource(Resource):
+    @ns.doc(
+        'get_images',
+        description='Retrieves all images stored in the database.',
+        responses={
+            200: 'List of images retrieved successfully',
+            500: 'Error retrieving images'
+        }
+    )
+    def get(self):
+        """Retrieves all images from the database"""
+        try:
+            images = Image.query.all()
+            images_list = [
+                {
+                    "id": image.id,
+                    "user_id": image.user_id,
+                    "image_name": image.image_name,
+                    "brightness_level": image.brightness_level
+                }
+                for image in images
+            ]
+            return {"images": images_list}, 200
+        except Exception as e:
+            return {"error": str(e)}, 500
