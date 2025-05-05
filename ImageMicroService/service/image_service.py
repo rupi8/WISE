@@ -56,3 +56,7 @@ class ImageService:
         main(inputString=f'LOAD {ImageService.image}')
         main(inputString=f"SEND {image_name}")
         return f"Image changed to {image_name}"
+    
+    def gesture_adjust(self, command):
+        print(f"Gesture command received: {command}")
+        return "Nice command!"

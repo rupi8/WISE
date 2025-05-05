@@ -17,8 +17,8 @@ command_model = ns.model('Command', {
     'command': fields.String(
         required=True,
         description='Command to execute',
-        example='increase brightness',
-        enum=['increase brightness', 'decrease brightness', 'change image']
+        example='fist',
+        enum=['fist', 'palm', 'finger_up', 'finger_down']
     )
 })
 
@@ -188,28 +188,22 @@ class AdjustBrightnessResource(Resource):
 
 @ns.route('/command')
 class CommandResource(Resource):
-    @ns.doc(
-        'handle_command',
-        description=(
-            'Processes a command to adjust the image, such as increasing or decreasing brightness. '
-            'The command must be sent in the request body in JSON format.'
-        ),
-        responses={
-            200: 'Command processed successfully',
-            400: 'Error: Invalid or malformed command'
-        }
-    )
     @ns.expect(command_model, validate=True)
     def post(self):
         """Processes a command to adjust the image"""
         data = ns.payload
-        if not data or "command" not in data:
-            return ns.marshal({"error": "Invalid command"}, error_model), 400
-        
         command = data["command"]
-        result = image_service.adjust_brightness(command)
+        result = image_service.gesture_adjust(command)
+
+        # Maneja el caso en el que result sea None
+        if result is None:
+            return ns.marshal({"error": "Unexpected error occurred"}, error_model), 500
+
+        # Maneja el caso en el que result contenga un error
         if "error" in result.lower():
             return ns.marshal({"error": result}, error_model), 400
+
+        # Devuelve el resultado exitoso
         return ns.marshal({"result": result}, response_model), 200
 
 @ns.route('/change-image')
@@ -256,3 +250,13 @@ class ImagesResource(Resource):
             return {"images": images_list}, 200
         except Exception as e:
             return {"error": str(e)}, 500
+
+def gesture_adjust(self, command):
+    """Processes a gesture command to adjust the image."""
+    valid_commands = ["fist", "palm", "finger_up", "finger_down"]
+    if command not in valid_commands:
+        return "Error: Invalid command"
+
+    # Imprime el comando recibido si es válido
+    print(f"Gesture command received: {command}")
+    return f"Command '{command}' executed successfully"
