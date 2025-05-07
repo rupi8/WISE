@@ -93,6 +93,14 @@ error_model = ns.model('Error', {
     )
 })
 
+screen_model = ns.model('Screen', {
+    'command': fields.String(
+        required=True,
+        description='Text to determine screen state',
+        example='ON'
+    )
+})
+
 @ns.route('/test')
 class TestResource(Resource):
     @ns.doc(
@@ -260,3 +268,26 @@ def gesture_adjust(self, command):
     # Imprime el comando recibido si es válido
     print(f"Gesture command received: {command}")
     return f"Command '{command}' executed successfully"
+
+@ns.route('/screen')
+class ScreenResource(Resource):
+    @ns.doc(
+        'screen_control',
+        description='Controls the screen state based on the text provided.',
+        responses={
+            200: 'Screen state updated successfully',
+            400: 'Invalid text value'
+        }
+    )
+    @ns.expect(screen_model, validate=True)
+    def post(self):
+        """Controls the screen state"""
+        data = ns.payload
+        command = data.get('command', '')
+
+        # Llama a la función del servicio
+        result = image_service.control_screen(command)
+        if "error" in result.lower():
+            return ns.marshal({"error": result}, error_model), 400
+
+        return ns.marshal({"result": result}, response_model), 200

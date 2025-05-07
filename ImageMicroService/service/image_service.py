@@ -60,3 +60,14 @@ class ImageService:
     def gesture_adjust(self, command):
         print(f"Gesture command received: {command}")
         return "Nice command!"
+    
+    def control_screen(self, command):
+        """Controls the screen state based on the text provided."""
+        if command == "turn on":
+            print("(screen ON)")
+            return "Screen turned ON"
+        elif command == "turn off":
+            print("(screen OFF)")
+            return "Screen turned OFF"
+        else:
+            return "Error: Invalid text value. Use 'ON' or 'OFF'."
