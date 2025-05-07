@@ -40,9 +40,9 @@ class ImageService:
         if ImageService.image == None:
             return "Image not found"
 
-        if adjustment == "increase":
+        if adjustment == "increase brightness":
             main(inputString = "INCREASE")
-        elif adjustment == "decrease":
+        elif adjustment == "decrease brightness":
             main(inputString = "DECREASE")
 
         db.session.commit()
