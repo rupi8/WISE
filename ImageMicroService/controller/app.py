@@ -36,4 +36,8 @@ api = Api(
 api.add_namespace(image_ns)
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=8080, debug=True)
+    # Verifica si se ejecuta en modo depuración
+    debug_mode = os.getenv("FLASK_DEBUG", "false").lower() == "true"
+
+    # Ejecuta la aplicación Flask
+    app.run(host='0.0.0.0', port=8080, debug=debug_mode, use_reloader=not debug_mode)

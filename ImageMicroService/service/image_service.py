@@ -3,7 +3,6 @@ from extensions import db
 from scripts_tcp.Server_Code1 import main
 
 class ImageService:
-    image = "2"  # Imagen actual (objeto Image)
     def __init__(self):
         self.current_image = None  # Imagen actual (objeto Image)
 
@@ -50,10 +49,10 @@ class ImageService:
 
     def change_image(self, image_name):
         """Changes the current image."""
-        image = ImageService.image
+        image = image_name
         if image == None:
             return "Image not found"
-        main(inputString=f'LOAD {ImageService.image}')
+        main(inputString=f'LOAD {image}')
         main(inputString=f"SEND {image_name}")
         return f"Image changed to {image_name}"
     

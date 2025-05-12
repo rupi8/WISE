@@ -82,7 +82,7 @@ adjust_brightness_model = ns.model('AdjustBrightness', {
         required=True,
         description='Adjustment type',
         example='increase',
-        enum=['increase', 'decrease']
+        enum=['increase brightness', 'decrease brightness']
     )
 })
 
@@ -97,7 +97,7 @@ screen_model = ns.model('Screen', {
     'command': fields.String(
         required=True,
         description='Text to determine screen state',
-        example='ON'
+        example='turn on'
     )
 })
 
@@ -283,7 +283,7 @@ class ScreenResource(Resource):
     def post(self):
         """Controls the screen state"""
         data = ns.payload
-        command = data.get('command', '')
+        command = data["command"]
 
         # Llama a la función del servicio
         result = image_service.control_screen(command)
