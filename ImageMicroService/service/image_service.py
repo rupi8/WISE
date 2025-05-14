@@ -36,16 +36,15 @@ class ImageService:
     def adjust_brightness(self, image_id, adjustment):
         """Adjusts the brightness of an image."""
         """image = Image.query.get(image_id)"""
-        if ImageService.image == None:
-            return "Image not found"
-
+        image = Image.query.filter_by(id=image_id).first()
+        """ajustar els atributs per el main"""
         if adjustment == "increase brightness":
             main(inputString = "INCREASE")
         elif adjustment == "decrease brightness":
             main(inputString = "DECREASE")
 
         db.session.commit()
-        return f"Brightness adjusted to {ImageService.image}"
+        return f"Brightness adjusted to {image}"
 
     def change_image(self, image_name):
         """Changes the current image."""
