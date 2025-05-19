@@ -5,6 +5,7 @@ import os
 import time
 import numpy as np
 import sqlite3  # Para conexión a la base de datos
+import io
 from subprocess import run, CalledProcessError
 from scripts_tcp.fake_clients import FakeConnection  # Importa la clase FakeConnection desde fake_clients.py
 
@@ -266,6 +267,9 @@ def list_images_from_all_clients(clients):
         common = s if common is None else (common & s)
     return common or set()
 
+def blob_to_matrix(blob_data):
+    return np.load(io.BytesIO(blob_data))
+
 def main(inputString):
     server_sock = socket.socket()
     server_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -305,7 +309,7 @@ def main(inputString):
             elif cmd == "SEND" and len(parts)==2:
                 name = parts[1]
                 try:
-                    mat = load_matrix_from_db(name)
+                    mat = blob_to_matrix(load_matrix_from_db(name))
                 except Exception as e:
                     print(f"[S] Load error: {e}")
                     continue
