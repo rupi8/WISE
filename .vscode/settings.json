@@ -1,0 +1,11 @@
+{
+    "sqltools.useNodeRuntime": true,
+    "sqltools.connections": [
+        {
+            "previewLimit": 50,
+            "driver": "SQLite",
+            "name": "wiseBD",
+            "database": "${workspaceFolder:WISE}/ImageMicroService/controller/instance/image_service.db"
+        }
+    ]
+}

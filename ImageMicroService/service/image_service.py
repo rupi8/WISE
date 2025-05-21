@@ -1,6 +1,7 @@
 from models.models import User, Image
 from extensions import db
 from scripts_tcp.Server_Code1 import main
+from controller.shared_state import clients
 
 class ImageService:
     def __init__(self):
@@ -39,9 +40,9 @@ class ImageService:
         image = Image.query.filter_by(id=image_id).first()
         """ajustar els atributs per el main"""
         if adjustment == "increase brightness":
-            main(inputString = "INCREASE")
+            main(clients, inputString = "INCREASE")
         elif adjustment == "decrease brightness":
-            main(inputString = "DECREASE")
+            main(clients, inputString = "DECREASE")
 
         db.session.commit()
         return f"Brightness adjusted to {image}"
@@ -51,8 +52,7 @@ class ImageService:
         image = image_name
         if image == None:
             return "Image not found"
-        main(inputString=f'LOAD {image}')
-        main(inputString=f"SEND {image_name}")
+        main(clients, inputString=f"SEND {image_name}")
         return f"Image changed to {image_name}"
     
     def gesture_adjust(self, command):
@@ -62,9 +62,11 @@ class ImageService:
     def control_screen(self, command):
         """Controls the screen state based on the text provided."""
         if command == "turn on":
+            main(clients, inputString=f"TEXT {command}")
             print("(screen ON)")
             return "Screen turned ON"
         elif command == "turn off":
+            main(clients, inputString=f"TEXT {command}")
             print("(screen OFF)")
             return "Screen turned OFF"
         else:
