@@ -29,6 +29,20 @@ SEGMENT_ORDER = {
    25: 5, 26: 6, 27: 7, 28: 8, 29: 9,
 }
 
+
+def prune_dead_clients(clients):
+    alive = []
+    for conn, addr in clients:
+        try:
+            conn.sendall(b"")  # zero-byte check
+            alive.append((conn, addr))
+        except:
+            print(f"[S] Removing dead client {addr}")
+            try: conn.close()
+            except: pass
+    return alive
+
+
 def tcp_server():
     server_sock = socket.socket()
     server_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -37,6 +51,7 @@ def tcp_server():
     print(f"[S] Listening on port {PORT} for {NUM_CLIENTS} clients…")
     
     try:
+       clients = prune_dead_clients(clients)
        while len(clients) < NUM_CLIENTS:
            conn, addr = server_sock.accept()
            print(f"[S] Client connected: {addr}")

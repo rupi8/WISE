@@ -86,227 +86,204 @@ def calculate_segments(data_len, parts=10):
    return segs
 
 
-
-
 def handle_segment_direct(conn, addr, idx, offset, length, data):
-   global ACKED_INDICES
-   try:
-       header = f"SEGMENT:{offset}:{length}\n".encode()
-       conn.sendall(header)
-       t0 = time.time()
-       conn.sendall(data[offset:offset+length])
-       t1 = time.time()
-       bps = (length*8)/(t1-t0)
-       print(f"[S]→{addr} idx={idx} {length}B in {t1-t0:.2f}s → {bps/1e6:.2f}Mbps")
+    global ACKED_INDICES
+    try:
+        header = f"SEGMENT:{offset}:{length}\n".encode()
+        conn.sendall(header)
+        t0 = time.time()
+        conn.sendall(data[offset:offset+length])
+        t1 = time.time()
+        bps = (length*8)/(t1-t0)
+        print(f"[S]→{addr} idx={idx} {length}B in {t1-t0:.2f}s → {bps/1e6:.2f}Mbps")
 
+        conn.settimeout(10.0)
+        try:
+            ack = conn.recv(1024).decode().strip()
+            print(f"[S] ACK from {addr} idx={idx}: {ack}")
+            if ack == "ACK":
+                with ACK_LOCK:
+                    ACKED_INDICES.add(idx)
+        except socket.timeout:
+            print(f"[S] No ACK (timeout) from {addr} idx={idx}")
+        finally:
+            conn.settimeout(None)
 
-       conn.settimeout(10.0)
-       try:
-           ack = conn.recv(1024).decode().strip()
-           if ack == "ACK":
-               with ACK_LOCK:
-                   ACKED_INDICES.add(idx)
-           print(f"[S] ACK from {addr} idx={idx}: {ack}")
-       except socket.timeout:
-           print(f"[S] No ACK (timeout) from {addr} idx={idx}")
-       finally:
-           conn.settimeout(None)
-
-
-   except Exception as e:
-       print(f"[S] Error enviando segmento a {addr} idx={idx}: {e}")
+    except Exception as e:
+        print(f"[S] Error sending segment to {addr} idx={idx}: {e}")
 
 
 
 
 def send_segmented(clients, data):
-   global ACKED_INDICES
-   ACKED_INDICES.clear()
+    global ACKED_INDICES
+    ACKED_INDICES.clear()
+
+    segments        = calculate_segments(len(data), NUM_CLIENTS)
+    ordered_clients = [None]*NUM_CLIENTS
+    for conn, addr in clients:
+        last = int(addr[0].split('.')[-1])
+        if last in SEGMENT_ORDER:
+            ordered_clients[SEGMENT_ORDER[last]] = (conn, addr)
+
+    # 1) initial send
+    threads = []
+    for idx, cli in enumerate(ordered_clients):
+        if cli:
+            conn, addr = cli
+            off, ln = segments[idx]
+            t = threading.Thread(
+                target=handle_segment_direct,
+                args=(conn, addr, idx, off, ln, data)
+            )
+            t.start()
+            threads.append(t)
+        else:
+            print(f"[S] No client for idx={idx}")
+    for t in threads: t.join()
+
+    # 2) up to 2 retries
+    for retry in range(2):
+        with ACK_LOCK:
+            missing = [i for i in range(NUM_CLIENTS) if i not in ACKED_INDICES]
+        if not missing:
+            break
+        print(f"[S] Retry {retry+1} for missing: {missing}")
+        threads = []
+        for idx in missing:
+            cli = ordered_clients[idx]
+            if cli:
+                conn, addr = cli
+                off, ln = segments[idx]
+                t = threading.Thread(
+                    target=handle_segment_direct,
+                    args=(conn, addr, idx, off, ln, data)
+                )
+                t.start()
+                threads.append(t)
+        for t in threads: t.join()
+
+    # 3) READY/GO handshake
+    print("[S] Broadcast READY")
+    for conn, addr in clients:
+        try: conn.sendall(b"READY\n")
+        except: pass
+
+    go_set = set()
+    deadline = time.time() + 5
+    while time.time() < deadline and len(go_set) < NUM_CLIENTS:
+        for conn, addr in clients:
+            conn.settimeout(1.0)
+            try:
+                line = conn.recv(64).decode().strip()
+                if line == "GO":
+                    last = int(addr[0].split('.')[-1])
+                    if last in SEGMENT_ORDER:
+                        go_set.add(SEGMENT_ORDER[last])
+                        print(f"[S] GO from {addr}")
+            except:
+                pass
+        time.sleep(0.1)
+
+    if len(go_set) == NUM_CLIENTS:
+        print("[S] All GO received.")
+    else:
+        print(f"[S] Missing GOs: {set(range(NUM_CLIENTS))-go_set}")
+
+    # 4) SHOW_TEMP & CLEAR_BUFFER
+    print("[S] Broadcast SHOW_TEMP")
+    for conn, addr in clients:
+        try: conn.sendall(b"SHOW_TEMP\n")
+        except: pass
+
+    print("[S] Broadcast CLEAR_BUFFER")
+    for conn, addr in clients:
+        try: conn.sendall(b"CLEAR_BUFFER\n")
+        except: pass
 
 
-   segments        = calculate_segments(len(data), NUM_CLIENTS)
-   ordered_clients = [None]*NUM_CLIENTS
-   for conn, addr in clients:
-       last = int(addr[0].split('.')[-1])
-       if last in SEGMENT_ORDER:
-           ordered_clients[SEGMENT_ORDER[last]] = (conn, addr)
-
-
-   # 1) Envío inicial
-   threads = []
-   for idx, cli in enumerate(ordered_clients):
-       if cli:
-           conn, addr = cli
-           off, ln = segments[idx]
-           t = threading.Thread(
-               target=handle_segment_direct,
-               args=(conn, addr, idx, off, ln, data)
-           )
-           t.start()
-           threads.append(t)
-       else:
-           print(f"[S] No hay cliente para idx={idx}")
-   for t in threads: t.join()
-
-
-   # 2) Reintentos para faltantes (hasta 2 veces)
-   for retry in range(2):
-       with ACK_LOCK:
-           missing = [i for i in range(NUM_CLIENTS) if i not in ACKED_INDICES]
-       if not missing:
-           break
-       print(f"[S] Retry {retry+1} para índices faltantes: {missing}")
-       threads = []
-       for idx in missing:
-           cli = ordered_clients[idx]
-           if cli:
-               conn, addr = cli
-               off, ln = segments[idx]
-               t = threading.Thread(
-                   target=handle_segment_direct,
-                   args=(conn, addr, idx, off, ln, data)
-               )
-               t.start()
-               threads.append(t)
-       for t in threads: t.join()
-
-
-   # 3) Handshake READY/GO
-   print("[S] Broadcast READY")
-   for conn, _ in clients:
-       try: conn.sendall(b"READY\n")
-       except: pass
-
-
-   go_set   = set()
-   end_wait = time.time() + 15
-   while time.time() < end_wait and len(go_set) < NUM_CLIENTS:
-       for conn, addr in clients:
-           conn.settimeout(1.0)
-           try:
-               line = conn.recv(64).decode().strip()
-               if line == "GO":
-                   last = int(addr[0].split('.')[-1])
-                   if last in SEGMENT_ORDER:
-                       go_set.add(SEGMENT_ORDER[last])
-                       print(f"[S] GO from {addr}")
-           except: pass
-       time.sleep(0.1)
-
-
-   if len(go_set) == NUM_CLIENTS:
-       print("[S] Todos GO recibidos.")
-   else:
-       faltan = set(range(NUM_CLIENTS)) - go_set
-       print(f"[S] Faltaron GOs de índices: {faltan}")
-
-
-   # 4) SHOW_TEMP y CLEAR_BUFFER
-   for cmd in ("SHOW_TEMP", "CLEAR_BUFFER"):
-       print(f"[S] Broadcast {cmd}")
-       for conn, _ in clients:
-           try: conn.sendall(f"{cmd}\n".encode())
-           except: pass
-
-
-def handle_full_load_segment(conn, addr, idx, name, offset, length, data):
-   try:
-       header = f"LOAD_IMAGE:{name}:{length}\n".encode()
-       segment = data[offset:offset+length]
-       conn.sendall(header)
-       t0 = time.time()
-       conn.sendall(segment)
-       t1 = time.time()
-       bps = (length*8)/(t1-t0)
-       print(f"[S]→{addr} LOAD idx={idx} {length}B in {t1-t0:.2f}s → {bps/1e6:.2f}Mbps")
-
-
-       conn.settimeout(5.0)
-       try:
-           ack = conn.recv(1024).decode().strip()
-           print(f"[S] ACK from {addr} idx={idx}: {ack}")
-       except socket.timeout:
-           print(f"[S] No ACK (timeout) from {addr} idx={idx}")
-       finally:
-           conn.settimeout(None)
-
-
-   except Exception as e:
-       print(f"[S] Error during LOAD for {addr} idx={idx}: {e}")
-
-
+def handle_full_load_segment(conn, addr, idx, name, offset, length, data_bytes):
+    try:
+        segment = data_bytes[offset:offset+length]
+        header  = f"LOAD_IMAGE:{name}:{length}\n".encode()
+        conn.sendall(header)
+        t0 = time.time()
+        conn.sendall(segment)
+        t1 = time.time()
+        bps = (length*8)/(t1-t0)
+        print(f"[S]→{addr} LOAD idx={idx} {length}B in {t1-t0:.2f}s → {bps/1e6:.2f}Mbps")
+        conn.settimeout(10.0)
+        try:
+            ack = conn.recv(1024).decode().strip()
+            print(f"[S] ACK from {addr} idx={idx}: {ack}")
+        except socket.timeout:
+            print(f"[S] No ACK (timeout) from {addr} idx={idx}")
+        finally:
+            conn.settimeout(None)
+    except Exception as e:
+        print(f"[S] Error during LOAD for {addr} idx={idx}: {e}")
 
 
 def send_full(clients, name, data):
-   segments        = calculate_segments(len(data), NUM_CLIENTS)
-   ordered_clients = [None]*NUM_CLIENTS
-   for conn, addr in clients:
-       last = int(addr[0].split('.')[-1])
-       if last in SEGMENT_ORDER:
-           ordered_clients[SEGMENT_ORDER[last]] = (conn, addr)
+    segments        = calculate_segments(len(data), NUM_CLIENTS)
+    ordered_clients = [None]*NUM_CLIENTS
+    for conn, addr in clients:
+        last = int(addr[0].split('.')[-1])
+        if last in SEGMENT_ORDER:
+            ordered_clients[SEGMENT_ORDER[last]] = (conn, addr)
 
-
-   threads = []
-   for idx, cli in enumerate(ordered_clients):
-       if cli:
-           conn, addr = cli
-           off, ln = segments[idx]
-           t = threading.Thread(
-               target=handle_full_load_segment,
-               args=(conn, addr, idx, name, off, ln, data)
-           )
-           t.start()
-           threads.append(t)
-       else:
-           print(f"[S] No hay cliente para LOAD idx={idx}")
-   for t in threads: t.join()
-
-
+    threads = []
+    for idx, cli in enumerate(ordered_clients):
+        if cli:
+            conn, addr = cli
+            off, ln = segments[idx]
+            t = threading.Thread(
+                target=handle_full_load_segment,
+                args=(conn, addr, idx, name, off, ln, data)
+            )
+            t.start()
+            threads.append(t)
+        else:
+            print(f"[S] No client for LOAD idx={idx}")
+    for t in threads: t.join()
 
 
 def broadcast(clients, cmd):
-   for conn, _ in clients:
-       try:
-           conn.sendall((cmd + "\n").encode())
-       except Exception as e:
-           print(f"[S] Error enviando '{cmd}': {e}")
+    for conn, addr in clients:
+        try:
+            conn.sendall((cmd+"\n").encode())
+            print(f"[S]→{addr}: {cmd}")
+        except Exception as e:
+            print(f"[S] Error sending '{cmd}' to {addr}: {e}")
 
-
-
-
+            
 def receive_list_from_client(conn, timeout=5.0):
-   names = set()
-   conn.settimeout(timeout)
-   try:
-       fp = conn.makefile("r")
-       line = fp.readline().strip()
-       if line != "IMAGES:":
-           return names
-       while True:
-           line = fp.readline().strip()
-           if line == "END_IMAGES":
-               break
-           if line:
-               names.add(line)
-   except:
-       pass
-   finally:
-       conn.settimeout(None)
-   return names
-
-
+    names = set()
+    conn.settimeout(timeout)
+    try:
+        fp = conn.makefile("r")
+        line = fp.readline().strip()
+        if line != "IMAGES:":
+            return names
+        while True:
+            line = fp.readline().strip()
+            if line == "END_IMAGES": break
+            if line: names.add(line)
+    except:
+        pass
+    finally:
+        conn.settimeout(None)
+    return names
 
 
 def list_images_from_all_clients(clients):
-   broadcast(clients, "LIST_IMAGES")
-   common = None
-   for conn, addr in clients:
-       s = receive_list_from_client(conn)
-       print(f"[S] {addr} has {s}")
-       common = s if common is None else (common & s)
-   return common or set()
-
-
+    broadcast(clients, "LIST_IMAGES")
+    common = None
+    for conn, addr in clients:
+        s = receive_list_from_client(conn)
+        print(f"[S] {addr} has {s}")
+        common = s if common is None else (common & s)
+    return common or set()
 
 
 def main(clients, inputString):
@@ -337,19 +314,6 @@ def main(clients, inputString):
             break
 
 
-        elif cmd == "SEND" and len(parts) == 2:
-            name = parts[1]
-            try:
-                mat = load_matrix_from_db(name)
-            except Exception as e:
-                print(f"[S] Load error: {e}")
-                continue
-            data = mat.tobytes()
-            print(f"[S] Segment send '{name}' → {len(data)}B")
-            send_segmented(clients, data)
-            break
-
-
         elif cmd == "SHOW" and len(parts) == 2:
             broadcast(clients, f"SHOW_IMAGE:{parts[1]}")
             break
@@ -367,7 +331,7 @@ def main(clients, inputString):
 
         elif cmd == "TEXT" and len(parts) >= 2:
             if len(parts) > 2 and parts[2] == "off":
-                print("[S] TEXT OFF: Cerrando conexiones con los clientes...")
+                print(f"[S] Generating image for text: '{message}'")
                 for conn, _ in clients:
                     try:
                         conn.close()

@@ -2,6 +2,7 @@ from models.models import User, Image
 from extensions import db
 from scripts_tcp.Server_Code1 import main
 from controller.shared_state import clients
+import time
 
 class ImageService:
     def __init__(self):
@@ -10,6 +11,14 @@ class ImageService:
     def create_user(self, username, email):
         """Creates a new user in the database."""
         if User.query.filter_by(username=username).first():
+            if(username == "Marcel"):
+                main(clients, inputString=f"TEXT {"Benvingut Marcel :)"}")
+                time.sleep(30)
+                main(clients, inputString=f"SHOW {"image_matrix_marcel.py"}")
+            elif(username == "Julia"):
+                main(clients, inputString=f"TEXT {"Eyyyy what's up :0"}")
+                time.sleep(30)
+                main(clients, inputString=f"SHOW {"image_matrix_julia.py"}")
             return "User already exists"
         if User.query.filter_by(email=email).first():
             return "Email already in use"
@@ -17,6 +26,7 @@ class ImageService:
         new_user = User(username=username, email=email)
         db.session.add(new_user)
         db.session.commit()
+        main(clients, inputString=f"TEXT {"Benvingut a la familia {username} :D"}")
         return "User created successfully"
 
     def save_image(self, image_path, user_id, image_name, brightness_level=1.0):
@@ -52,11 +62,27 @@ class ImageService:
         image = image_name
         if image == None:
             return "Image not found"
-        main(clients, inputString=f"SEND {image_name}")
+        main(clients, inputString=f"SHOW {image_name}")
         return f"Image changed to {image_name}"
     
     def gesture_adjust(self, command):
         print(f"Gesture command received: {command}")
+        if(command == "finger up"):
+            main(clients, inputString = "INCREASE")
+            print("Brightness increased")
+            return "Brightness increased"
+        elif(command == "finger down"):
+            main(clients, inputString = "DECREASE")
+            print("Brightness decreased")
+            return "Brightness decreased"
+        elif(command == "fist"):
+            main(clients, inputString =f"SHOW {"image_matrix_purple.py"}")
+            print("Fist command received")
+            return "Fist command received"
+        elif(command == "palm"):
+            main(clients, inputString =f"SHOW {"image_matrix_yellow.py"}")
+            print("Palm command received")
+            return "Palm command received"
         return "Nice command!"
     
     def control_screen(self, command):
